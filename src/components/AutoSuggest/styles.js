@@ -1,4 +1,4 @@
-import { makeStyles} from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 
 
 const useStyles = makeStyles(theme => ({
@@ -26,6 +26,10 @@ const useStyles = makeStyles(theme => ({
   },
   divider: {
     height: theme.spacing(2),
+  },
+  progress: {
+    height: 20,
+    width: 20,
   },
 }));
 

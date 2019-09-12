@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import deburr from 'lodash/deburr';
 import Autosuggest from 'react-autosuggest';
 import match from 'autosuggest-highlight/match';
@@ -7,71 +7,13 @@ import TextField from '@material-ui/core/TextField';
 import Paper from '@material-ui/core/Paper';
 import MenuItem from '@material-ui/core/MenuItem';
 import useDebounce from '../../hooks/useDebounce'
+import { useQuery } from '@apollo/react-hooks';
+import { gql } from 'apollo-boost';
 import useStyles from './styles'
-
-function renderInputComponent(inputProps) {
-  const { classes, inputRef = () => { }, ref, ...other } = inputProps;
-
-  return (
-    <TextField
-      fullWidth
-      InputProps={{
-        inputRef: node => {
-          ref(node);
-          inputRef(node);
-        },
-        classes: {
-          input: classes.input,
-        },
-      }}
-      {...other}
-    />
-  );
-}
-
-function renderSuggestion(suggestion, { query, isHighlighted }) {
-  const matches = match(suggestion.label, query);
-  const parts = parse(suggestion.label, matches);
-
-  return (
-    <MenuItem selected={isHighlighted} component="div">
-      <div>
-        {parts.map(part => (
-          <span key={part.text} style={{ fontWeight: part.highlight ? 500 : 400 }}>
-            {part.text}
-          </span>
-        ))}
-      </div>
-    </MenuItem>
-  );
-}
-
-function getSuggestions(value, props) {
-  const inputValue = deburr(value.trim()).toLowerCase();
-  const inputLength = inputValue.length;
-  let count = 0;
-
-  return inputLength === 0
-    ? []
-    : props.suggestions.filter(suggestion => {
-      const keep =
-        count < 5 && suggestion.label.slice(0, inputLength).toLowerCase() === inputValue;
-
-      if (keep) {
-        count += 1;
-      }
-
-      return keep;
-    });
-}
-
-function getSuggestionValue(suggestion) {
-  return suggestion.label;
-}
 
 export default function IntegrationAutosuggest(props) {
   const classes = useStyles();
-  const [anchorEl, setAnchorEl] = useState(null);
+  // const [anchorEl, setAnchorEl] = useState(null);
   const [state, setState] = useState('');
 
   const [stateSuggestions, setSuggestions] = useState([]);
@@ -85,14 +27,68 @@ export default function IntegrationAutosuggest(props) {
   };
 
   const debouncedSearchTerm = useDebounce(state, 250);
-  useEffect(
-    () => {
-      if (debouncedSearchTerm) {
-        props.handleChangeName(state)
-      }
-    },
-    [debouncedSearchTerm, props, state]
-  );
+
+  function renderInputComponent(inputProps) {
+    const { classes, inputRef = () => { }, ref, ...other } = inputProps;
+
+    return (
+      <>
+        <TextField
+          fullWidth
+          InputProps={{
+            inputRef: node => {
+              ref(node);
+              inputRef(node);
+            },
+            classes: {
+              input: classes.input,
+            },
+          }}
+          {...other}
+        />
+      </>
+    );
+  }
+
+  function renderSuggestion(suggestion, { query, isHighlighted }) {
+    const matches = match(suggestion.label, query);
+    const parts = parse(suggestion.label, matches);
+
+    return (
+      <MenuItem selected={isHighlighted} component="div">
+        <div>
+          {parts.map(part => (
+            <span key={part.text} style={{ fontWeight: part.highlight ? 500 : 400 }}>
+              {part.text}
+            </span>
+          ))}
+        </div>
+      </MenuItem>
+    );
+  }
+
+  function getSuggestions(value, props) {
+    const inputValue = deburr(value.trim()).toLowerCase();
+    const inputLength = inputValue.length;
+    let count = 0;
+
+    return inputLength === 0
+      ? []
+      : suggestions.filter(suggestion => {
+        const keep =
+          count < 5 && suggestion.label.slice(0, inputLength).toLowerCase() === inputValue;
+
+        if (keep) {
+          count += 1;
+        }
+
+        return keep;
+      });
+  }
+
+  function getSuggestionValue(suggestion) {
+    return suggestion.label;
+  }
 
 
   const autosuggestProps = {
@@ -103,6 +99,27 @@ export default function IntegrationAutosuggest(props) {
     getSuggestionValue,
     renderSuggestion,
   };
+
+  const LOAD_STATIONS = gql`
+    query Station($debouncedSearchTerm: String!) {
+    search(searchTerm: $debouncedSearchTerm){
+      stations {
+        name
+      }
+    }
+  }
+  `;
+
+  const { loading, data } = useQuery(LOAD_STATIONS, {
+    variables: { debouncedSearchTerm },
+  });
+  const suggestions = data && data.search && data.search.stations ? data.search.stations
+    .map(suggestion => ({
+      value: suggestion.name.replace(` (${debouncedSearchTerm})`, ''),
+      label: suggestion.name.replace(` (${debouncedSearchTerm})`, ''),
+    }))
+    : []
+
 
   return (
     <div className={classes.root}>
