@@ -10,6 +10,7 @@ import useDebounce from '../../hooks/useDebounce'
 import { useQuery } from '@apollo/react-hooks';
 import { gql } from 'apollo-boost';
 import useStyles from './styles'
+import { Link } from 'react-router-dom'
 
 export default function IntegrationAutosuggest(props) {
   const classes = useStyles();
@@ -53,16 +54,17 @@ export default function IntegrationAutosuggest(props) {
   function renderSuggestion(suggestion, { query, isHighlighted }) {
     const matches = match(suggestion.label, query);
     const parts = parse(suggestion.label, matches);
+    const number = suggestion.value
 
     return (
       <MenuItem selected={isHighlighted} component="div">
-        <div>
+        <Link to={`/station/${number}`}>
           {parts.map(part => (
             <span key={part.text} style={{ fontWeight: part.highlight ? 500 : 400 }}>
               {part.text}
             </span>
           ))}
-        </div>
+        </Link>
       </MenuItem>
     );
   }
@@ -87,7 +89,7 @@ export default function IntegrationAutosuggest(props) {
   }
 
   function getSuggestionValue(suggestion) {
-    return suggestion.label;
+    return suggestion.value;
   }
 
 
@@ -101,10 +103,11 @@ export default function IntegrationAutosuggest(props) {
   };
 
   const LOAD_STATIONS = gql`
-    query Station($debouncedSearchTerm: String!) {
+    query Stations($debouncedSearchTerm: String!) {
     search(searchTerm: $debouncedSearchTerm){
       stations {
         name
+        stationNumber
       }
     }
   }
@@ -115,11 +118,11 @@ export default function IntegrationAutosuggest(props) {
   });
   const suggestions = data && data.search && data.search.stations ? data.search.stations
     .map(suggestion => ({
-      value: suggestion.name.replace(` (${debouncedSearchTerm})`, ''),
+      value: suggestion.stationNumber,
       label: suggestion.name.replace(` (${debouncedSearchTerm})`, ''),
     }))
     : []
-
+  console.log(suggestions)
 
   return (
     <div className={classes.root}>
