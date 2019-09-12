@@ -1,12 +1,19 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import * as serviceWorker from './serviceWorker';
+import { render } from 'react-dom';
+import CssBaseline from '@material-ui/core/CssBaseline';
+import AppRouter from './routes';
+import { ApolloProvider } from '@apollo/react-hooks';
+import ApolloClient from 'apollo-boost';
 
-ReactDOM.render(<App />, document.getElementById('root'));
+const client = new ApolloClient({
+  uri: 'https://cors-anywhere.herokuapp.com/https://bahnql.herokuapp.com/graphql',
+});
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();
+const App = () => (
+  <ApolloProvider client={client}>
+    <CssBaseline />
+    <AppRouter />
+  </ApolloProvider>
+);
+
+render(<App />, document.getElementById('root'));
