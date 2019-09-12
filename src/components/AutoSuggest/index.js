@@ -84,18 +84,9 @@ export default function IntegrationAutosuggest(props) {
     setSuggestions([]);
   };
 
-  const handleChange = name => (event, { newValue }) => {
-    setState({
-      ...state,
-      [name]: newValue,
-    });
-    props.handleChangeName(state)
-  };
-
   const debouncedSearchTerm = useDebounce(state, 250);
   useEffect(
     () => {
-      // Make sure we have a value (user has entered something in input)
       if (debouncedSearchTerm) {
         props.handleChangeName(state)
       }

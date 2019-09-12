@@ -26,8 +26,8 @@ const Home = () => {
 
   const suggestions = data && data.search && data.search.stations ? data.search.stations
     .map(suggestion => ({
-      value: suggestion.name,
-      label: suggestion.name,
+      value: suggestion.name.replace(` (${name})`, ''),
+      label: suggestion.name.replace(` (${name})`, ''),
     }))
     : []
 
