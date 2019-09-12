@@ -17,23 +17,21 @@ const Home = () => {
     }
   }
   `;
-  
-  const { loading, error, data } = useQuery(LOAD_STATIONS, {
+
+  const { loading, data } = useQuery(LOAD_STATIONS, {
     variables: { name },
-    skip: !name,
-    pollInterval: 250,
   });
 
   const handleChangeName = (nameText) => setName(nameText)
 
   const suggestions = data && data.search && data.search.stations ? data.search.stations
     .map(suggestion => ({
-          value: suggestion.name,
-          label: suggestion.name,
-        }))
-  : []
+      value: suggestion.name,
+      label: suggestion.name,
+    }))
+    : []
 
-  const Container = ({children}) => (
+  const Container = ({ children }) => (
     <div className={classes.root}>
       <Paper className={classes.paper}>
         <h1>Pick a Station:</h1>
@@ -42,20 +40,15 @@ const Home = () => {
     </div>
   )
 
-  if(loading){
-    return <Container>
-      <AutoSuggest suggestions={[]} handleChangeName={handleChangeName}/>
-    </Container>
-  }
-  if(error){
-    return <Container>
-      <AutoSuggest suggestions={[]} handleChangeName={handleChangeName}/>
-    </Container>
-  }
+  // if (loading) {
+  //   return <Container>
+  //     <AutoSuggest suggestions={[]} handleChangeName={handleChangeName} />
+  //   </Container>
+  // }
 
   return <Container>
-      <AutoSuggest suggestions={suggestions} handleChangeName={handleChangeName}/>
-    </Container>
+    <AutoSuggest suggestions={suggestions} handleChangeName={handleChangeName} />
+  </Container>
 }
 
 export default Home;

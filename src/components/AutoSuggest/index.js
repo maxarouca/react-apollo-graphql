@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import deburr from 'lodash/deburr';
 import Autosuggest from 'react-autosuggest';
 import match from 'autosuggest-highlight/match';
@@ -6,10 +6,11 @@ import parse from 'autosuggest-highlight/parse';
 import TextField from '@material-ui/core/TextField';
 import Paper from '@material-ui/core/Paper';
 import MenuItem from '@material-ui/core/MenuItem';
+import useDebounce from '../../hooks/useDebounce'
 import useStyles from './styles'
 
 function renderInputComponent(inputProps) {
-  const { classes, inputRef = () => {}, ref, ...other } = inputProps;
+  const { classes, inputRef = () => { }, ref, ...other } = inputProps;
 
   return (
     <TextField
@@ -53,15 +54,15 @@ function getSuggestions(value, props) {
   return inputLength === 0
     ? []
     : props.suggestions.filter(suggestion => {
-        const keep =
-          count < 5 && suggestion.label.slice(0, inputLength).toLowerCase() === inputValue;
+      const keep =
+        count < 5 && suggestion.label.slice(0, inputLength).toLowerCase() === inputValue;
 
-        if (keep) {
-          count += 1;
-        }
+      if (keep) {
+        count += 1;
+      }
 
-        return keep;
-      });
+      return keep;
+    });
 }
 
 function getSuggestionValue(suggestion) {
@@ -70,12 +71,10 @@ function getSuggestionValue(suggestion) {
 
 export default function IntegrationAutosuggest(props) {
   const classes = useStyles();
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const [state, setState] = React.useState({
-    single: '',
-  });
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [state, setState] = useState('');
 
-  const [stateSuggestions, setSuggestions] = React.useState([]);
+  const [stateSuggestions, setSuggestions] = useState([]);
 
   const handleSuggestionsFetchRequested = ({ value }) => {
     setSuggestions(getSuggestions(value, props));
@@ -90,8 +89,20 @@ export default function IntegrationAutosuggest(props) {
       ...state,
       [name]: newValue,
     });
-    props.handleChangeName(state.single)
+    props.handleChangeName(state)
   };
+
+  const debouncedSearchTerm = useDebounce(state, 250);
+  useEffect(
+    () => {
+      // Make sure we have a value (user has entered something in input)
+      if (debouncedSearchTerm) {
+        props.handleChangeName(state)
+      }
+    },
+    [debouncedSearchTerm, props, state]
+  );
+
 
   const autosuggestProps = {
     renderInputComponent,
@@ -111,8 +122,8 @@ export default function IntegrationAutosuggest(props) {
           id: 'react-autosuggest-simple',
           label: 'Stations',
           placeholder: 'Search a station',
-          value: state.single,
-          onChange: handleChange('single'),
+          value: state,
+          onChange: e => setState(e.target.value),
         }}
         theme={{
           container: classes.container,
