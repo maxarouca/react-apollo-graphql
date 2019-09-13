@@ -31,6 +31,10 @@ const useStyles = makeStyles(theme => ({
     height: 20,
     width: 20,
   },
+  link: {
+    textDecoration: 'none',
+    color: '#242424',
+  }
 }));
 
 export default useStyles

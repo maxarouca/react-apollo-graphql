@@ -15,9 +15,12 @@ import { Link } from 'react-router-dom'
 export default function IntegrationAutosuggest(props) {
   const classes = useStyles();
   // const [anchorEl, setAnchorEl] = useState(null);
-  const [state, setState] = useState('');
+  const [state, setState] = useState({
+    single: ''
+  });
 
   const [stateSuggestions, setSuggestions] = useState([]);
+  const [suggestionSelected, setsuggestionSelected] = useState('');
 
   const handleSuggestionsFetchRequested = ({ value }) => {
     setSuggestions(getSuggestions(value, props));
@@ -27,7 +30,14 @@ export default function IntegrationAutosuggest(props) {
     setSuggestions([]);
   };
 
-  const debouncedSearchTerm = useDebounce(state, 250);
+  const handleChange = name => (event, { newValue }) => {
+    setState({
+      ...state,
+      [name]: newValue,
+    });
+  };
+
+  const debouncedSearchTerm = useDebounce(state.single, 250);
 
   function renderInputComponent(inputProps) {
     const { classes, inputRef = () => { }, ref, ...other } = inputProps;
@@ -54,11 +64,11 @@ export default function IntegrationAutosuggest(props) {
   function renderSuggestion(suggestion, { query, isHighlighted }) {
     const matches = match(suggestion.label, query);
     const parts = parse(suggestion.label, matches);
-    const number = suggestion.value
+    const number = suggestion.number
 
     return (
-      <MenuItem selected={isHighlighted} component="div">
-        <Link to={`/station/${number}`}>
+      <MenuItem selected={isHighlighted} component="div" onKeyUp={(e) => console.log(e)} >
+        <Link to={`/station/${number}`} className={classes.link}>
           {parts.map(part => (
             <span key={part.text} style={{ fontWeight: part.highlight ? 500 : 400 }}>
               {part.text}
@@ -89,7 +99,14 @@ export default function IntegrationAutosuggest(props) {
   }
 
   function getSuggestionValue(suggestion) {
+    setsuggestionSelected(suggestion.number)
+
     return suggestion.value;
+
+  }
+
+  const handleSuggestionSelected = (props) => {
+    props.history.push(`/station/${suggestionSelected}`)
   }
 
 
@@ -100,6 +117,7 @@ export default function IntegrationAutosuggest(props) {
     onSuggestionsClearRequested: handleSuggestionsClearRequested,
     getSuggestionValue,
     renderSuggestion,
+    onSuggestionSelected: () => handleSuggestionSelected(props),
   };
 
   const LOAD_STATIONS = gql`
@@ -118,11 +136,11 @@ export default function IntegrationAutosuggest(props) {
   });
   const suggestions = data && data.search && data.search.stations ? data.search.stations
     .map(suggestion => ({
-      value: suggestion.stationNumber,
+      number: suggestion.stationNumber,
       label: suggestion.name.replace(` (${debouncedSearchTerm})`, ''),
+      value: suggestion.name.replace(` (${debouncedSearchTerm})`, ''),
     }))
     : []
-  console.log(suggestions)
 
   return (
     <div className={classes.root}>
@@ -133,8 +151,8 @@ export default function IntegrationAutosuggest(props) {
           id: 'react-autosuggest-simple',
           label: 'Stations',
           placeholder: 'Search a station',
-          value: state,
-          onChange: e => setState(e.target.value),
+          value: state.single,
+          onChange: handleChange('single'),
         }}
         theme={{
           container: classes.container,
